@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>儲蓄小幫手</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--bg2:#111827;--card:#151c2f;--card-h:#1a2340;--border:rgba(255,255,255,.08);--text:#f0f4ff;--text2:#94a3b8;--muted:#64748b;--accent:#3b82f6;--accent-h:#2563eb;--soft:rgba(59,130,246,.15);--ok:#34d399;--warn:#fbbf24;--r:12px;--rs:8px}
+    [data-theme=light]{--bg:#f1f5f9;--bg2:#fff;--card:#fff;--card-h:#f8fafc;--border:rgba(0,0,0,.08);--text:#0f172a;--text2:#475569;--muted:#94a3b8;--soft:rgba(59,130,246,.1)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Sans TC',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;display:flex;flex-direction:column}
+    button,input,select{font-family:inherit;cursor:pointer}
+    input,select{outline:none}
+    a{color:var(--accent)}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .nav-brand{display:flex;align-items:center;gap:10px;font-weight:600}
+    .nav-links{display:flex;gap:4px}
+    .nav-btn{background:0;color:var(--text2);padding:8px 16px;border:0;border-radius:var(--rs);font-size:14px}
+    .nav-btn.active,.nav-btn:hover{color:var(--accent);background:var(--soft)}
+    .theme-btn{background:0;border:0;font-size:20px;padding:6px 10px;border-radius:var(--rs)}
+    .layout{display:grid;grid-template-columns:340px 1fr;gap:20px;padding:20px;max-width:1400px;margin:0 auto;flex:1;width:100%}
+    .sidebar{display:flex;flex-direction:column;gap:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+    .card h2,.card h3{font-size:15px;font-weight:600;margin-bottom:16px}
+    .fg{margin-bottom:14px}
+    .fg label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px}
+    .fg input,.fg select{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px}
+    input[type=date]{color-scheme:dark}
+    input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;opacity:.9}
+    [data-theme=light] input[type=date]{color-scheme:light}
+    [data-theme=light] input[type=date]::-webkit-calendar-picker-indicator{filter:none;opacity:.65}
+    .btn-row{display:flex;gap:10px;margin-top:8px}
+    .btn{flex:1;padding:10px;border:0;border-radius:var(--rs);font-size:14px;font-weight:500}
+    .btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h)}
+    .btn-s{background:var(--bg);color:var(--text2);border:1px solid var(--border)}
+    .btn-save-inline{background:var(--ok);color:#0a0e1a;font-weight:600}
+.btn-save-inline:disabled{opacity:.45;cursor:not-allowed}
+.summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.summary-save{padding:10px 20px;background:var(--ok);color:#0a0e1a;border:0;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer}
+.summary-save:hover{opacity:.9}
+    .hint{font-size:12px;color:var(--muted);margin-bottom:12px}
+    .hist-list{max-height:360px;overflow-y:auto}
+    .hist-item{border-bottom:1px solid var(--border)}
+    .hist-row{display:grid;grid-template-columns:70px 1fr 24px;align-items:center;width:100%;padding:12px 8px;background:0;border:0;color:var(--text);text-align:left}
+    .hist-row:hover,.hist-row.sel{background:var(--soft)}
+    .rates{display:flex;gap:8px;justify-content:flex-end;font-size:13px;color:var(--text2)}
+    .rates span{min-width:42px;text-align:center;border-right:1px solid var(--border)}.rates span:last-child{border:0}
+    .chev{font-size:10px;color:var(--muted);transition:.2s}.chev.open{transform:rotate(180deg)}
+    .hist-detail{padding:0 8px 12px;font-size:13px;color:var(--text2)}
+    .memo-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);margin-bottom:4px}
+    .memo-box{margin-top:8px;padding:8px;background:rgba(251,191,36,.1);border-radius:var(--rs);border-left:3px solid var(--warn)}
+    .main{min-width:0}
+    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;color:var(--muted);background:var(--card);border:1px dashed var(--border);border-radius:var(--r)}
+    .memo-banner{background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(59,130,246,.08));border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:16px 20px;margin-bottom:16px}
+    .memo-banner h4{font-size:15px;margin-bottom:8px}
+    .memo-banner p{font-size:13px;color:var(--text2)}
+    .memo-body{display:flex;gap:16px;margin-top:10px}
+    .memo-body img{width:120px;border-radius:var(--rs)}
+    .summary{display:flex;flex-wrap:wrap;gap:24px 40px;padding:24px}
+    .sum-item label{display:block;font-size:13px;color:var(--text2)}
+    .sum-item span{font-size:20px;font-weight:600}
+    .tabs{display:flex;border-bottom:1px solid var(--border)}
+    .tab{padding:12px 24px;background:0;border:0;border-bottom:2px solid transparent;color:var(--text2);font-size:14px}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .phase-info{display:flex;flex-wrap:wrap;gap:16px 32px;padding:16px 20px;font-size:14px;color:var(--text2)}
+    .phase-info strong{color:var(--text)}
+    .tbl-wrap{max-height:480px;overflow-y:auto}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th{position:sticky;top:0;background:var(--card);padding:12px 16px;text-align:left;color:var(--text2);border-bottom:1px solid var(--border);font-weight:500}
+    td{padding:10px 16px;border-bottom:1px solid var(--border)}
+    tr:hover td{background:var(--card-h)}
+    .pos{color:var(--ok)!important}
+    .page-rec{max-width:960px;margin:0 auto;padding:32px 24px;flex:1;width:100%}
+    .page-rec h1{font-size:24px;margin-bottom:6px}
+    .rec-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+    .rec-table{width:100%;border-collapse:collapse;font-size:14px}
+    .rec-table th{padding:12px 10px;text-align:left;font-size:12px;font-weight:600;color:var(--text2);background:var(--bg2);border-bottom:1px solid var(--border)}
+    .rec-table td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+    .rec-table .col-expand{width:36px;text-align:center}
+    .rec-table .col-rate{width:56px;text-align:center;color:var(--text2);border-left:1px solid var(--border)}
+    .rec-table .col-del{width:48px;text-align:center}
+    .rec-table .col-interest,.rec-table .col-daily{min-width:72px;text-align:right;font-variant-numeric:tabular-nums}
+    .rec-table .col-daily{color:var(--text2)}
+    .rec-table .col-note,.rec-table .col-reward{max-width:88px;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .rec-table .col-reward{color:var(--warn)}
+    .rec-notes{margin-bottom:14px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+    .rec-notes .nf{flex:1;min-width:160px}
+    .rec-notes .nf label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px}
+    .rec-notes .nf input{width:100%;padding:8px 10px;font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);color:var(--text)}
+    .rec-notes .btn-notes{padding:8px 14px;font-size:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);cursor:pointer}
+    .year-row td{padding:10px 12px!important;background:var(--bg2);border-bottom:1px solid var(--border)}
+    .year-label{font-weight:700;margin-right:12px}.year-meta{font-size:13px;color:var(--text2)}
+    .daily-section{margin-top:16px}.daily-section h4{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text2)}
+    .rec-phase-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:10px}
+    .rec-phase-tab{padding:8px 16px;background:transparent;color:var(--text2);font-size:13px;border:none;border-bottom:2px solid transparent;cursor:pointer}
+    .rec-phase-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .rec-phase-info{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:10px;font-size:13px;color:var(--text2)}
+    .rec-phase-info strong{color:var(--text)}
+    .daily-wrap{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rs)}
+    .daily-mini{width:100%;border-collapse:collapse;font-size:13px}
+    .daily-mini th{position:sticky;top:0;background:var(--card);padding:8px 12px;text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid var(--border)}
+    .daily-mini td{padding:6px 12px;border-bottom:1px solid var(--border)}
+    .daily-mini .pos{color:var(--ok)}
+    .rec-row{cursor:pointer}.rec-row:hover,.rec-row.exp{background:var(--card-h)}
+    .rec-label{display:block;font-weight:600}.rec-sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+    .rec-detail-cell{padding:0!important;background:var(--bg)}
+    .rec-detail-inner{padding:14px 16px 16px 46px}
+    .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px 20px;font-size:14px}
+    .rec-grid small{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+    .rec-grid span{display:block;font-variant-numeric:tabular-nums}
+    .btn-del{padding:4px 8px;background:0;border:1px solid rgba(248,113,113,.45);color:#f87171;border-radius:var(--rs);font-size:12px;cursor:pointer}
+    .btn-del:hover{background:rgba(248,113,113,.12)}
+    .toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+    .toolbar .btn{flex:none;padding:8px 16px}
+    .notice{font-size:12px;color:var(--muted);margin-top:8px;padding:10px;background:var(--soft);border-radius:var(--rs)}
+    .hidden{display:none!important}
+    .site-footer{margin-top:auto;padding:16px 24px 20px;border-top:1px solid var(--border);background:var(--bg2);text-align:center}
+    .site-footer p{max-width:720px;margin:0 auto;font-size:12px;line-height:1.7;color:var(--warn)}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-brand"><span>🐱</span> 儲蓄小幫手</div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-page="calc">活期存款</button>
+      <button class="nav-btn" data-page="records">存款紀錄</button>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="切換主題">🌙</button>
+  </nav>
+
+  <div id="pageCalc" class="layout">
+    <aside class="sidebar">
+      <div class="card">
+        <h2>高息馬拉松活期存款</h2>
+        <div class="fg"><label>本金（港元）</label><input type="number" id="principal" value="50000" step="1000" min="0"></div>
+        <div class="fg"><label>存款開始日期</label><input type="date" id="startDate"></div>
+        <div class="fg"><label>客戶類型（MEMO 判定）</label>
+          <select id="customerType"><option value="other">一般客戶</option><option value="priority">新升級優先理財/優先私人</option></select>
+        </div>
+        <div class="fg"><label>備註</label><input type="text" id="note" placeholder="可選填，如：聯名戶、轉帳來源"></div>
+        <div class="fg"><label>贈品 / 回贈</label><input type="text" id="rewardNote" placeholder="如：HK$688 現金回贈、Pixar 足金（可選填）"></div>
+        <div class="btn-row">
+          <button class="btn btn-p" id="btnCalc">計算</button>
+          <button class="btn btn-s" id="btnReset">重設</button>
+          <button class="btn btn-save-inline" id="btnSave" disabled title="請先按計算">儲存紀錄</button>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <h3>歷史優惠期</h3>
+        <div class="hist-list" id="historyList"></div>
+        <p class="notice">紀錄存於瀏覽器，可至「存款紀錄」匯出 JSON 備份</p>
+      </div>
+    </aside>
+    <main class="main" id="mainArea">
+      <div class="empty" id="emptyState">
+        <p>輸入本金與日期，選擇優惠期後按「計算」</p>
+        <p id="previewRates" style="margin-top:12px;font-size:14px;color:var(--text2)"></p>
+      </div>
+    </main>
+  </div>
+
+  <div id="pageRecords" class="page-rec hidden">
+    <h1>存款紀錄</h1>
+    <p class="hint" style="margin-bottom:20px">紀錄儲存於瀏覽器 localStorage，可匯出備份至 save/ 資料夾</p>
+    <div class="toolbar">
+      <button class="btn btn-p" id="btnExport">匯出 JSON</button>
+      <label class="btn btn-s" style="cursor:pointer">匯入 JSON<input type="file" id="importInput" accept=".json" hidden></label>
+    </div>
+    <div id="recordsList"></div>
+  </div>
+
+  <footer class="site-footer">
+    <p>⚠ 此計算器只是個人測試用，資料可能有錯漏，一切資料以官方公佈為準。</p>
+  </footer>
+
+  <script src="offers-data.js"></script>
+  <script>
+const DEFAULT_OFFERS = OFFERS_DATA;
+
+const LS_RECORDS = 'savings-records';
+const LS_THEME = 'savings-theme';
+
+let selectedOfferId = '';
+let expandedHist = null;
+let expandedRec = null;
+let expandedPhaseByRec = {};
+let currentResult = null;
+let activePhase = 0;
+
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function formatDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function getTodayDate(){return formatDate(new Date())}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
+function firstDayOfNextMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,1)}
+function daysBetween(s,e){return Math.round((e-s)/86400000)+1}
+function round3(n){return Math.round(n*1000)/1000}
+function fmtRate(n){return n==null||Number.isNaN(Number(n))?'-':Number(n).toFixed(2)}
+function fmt(n){return Number(n).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})}
+function fmtInterest(n){return n==null||Number.isNaN(Number(n))?'-':'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})}
+function fmtBalance(n){return n==null||Number.isNaN(Number(n))?'-':'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})}
+function truncText(t,m=10){if(!t)return'—';return t.length>m?t.slice(0,m)+'…':t}
+function escAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
+function parseOfferSortKey(offer){
+  if(offer.startDate){const[y,m,d]=offer.startDate.split('-').map(Number);return y*10000+m*100+(d||1)}
+  const match=String(offer.label||offer.id||'').match(/^(\d{4})-(\d{1,2})/);
+  return match?parseInt(match[1],10)*100+parseInt(match[2],10):0;
+}
+
+function sortOffersByDate(offers){
+  return [...offers].sort((a,b)=>parseOfferSortKey(b)-parseOfferSortKey(a));
+}
+
+function resolveOfferIdForDate(offers,date){
+  const matched=findOfferForDate(offers,date);
+  return matched?.id||offers[0]?.id||'';
+}
+
+function applyDefaultDate(){
+  const today=getTodayDate();
+  document.getElementById('startDate').value=today;
+  selectedOfferId=resolveOfferIdForDate(getOffers(),today);
+  renderHistory();
+  updatePreview();
+}
+
+function getOffers(){
+  return sortOffersByDate([...DEFAULT_OFFERS]);
+}
+
+function getRecords(){return JSON.parse(localStorage.getItem(LS_RECORDS)||'[]')}
+
+function saveRecords(recs){localStorage.setItem(LS_RECORDS,JSON.stringify(recs))}
+
+function resolvePhases(depositStart, offer){
+  if(offer.phaseEnds?.length){
+    const offerEnd=parseDate(offer.endDate);
+    let phaseStart=parseDate(depositStart);
+    const phases=[];
+    offer.phaseEnds.forEach((endStr,idx)=>{
+      let phaseEnd=parseDate(endStr);
+      if(phaseEnd>offerEnd)phaseEnd=offerEnd;
+      if(phaseStart>offerEnd)return;
+      if(phaseStart<=phaseEnd){
+        phases.push({phase:idx+1,startDate:formatDate(phaseStart),endDate:formatDate(phaseEnd),days:daysBetween(phaseStart,phaseEnd)});
+      }
+      phaseStart=addDays(phaseEnd,1);
+    });
+    return phases;
+  }
+  return getPhaseDates(depositStart,offer.endDate);
+}
+
+function getRates(offer){
+  return offer.rates;
+}
+
+function getPhaseDates(depositStart, offerEnd){
+  const start=parseDate(depositStart), end=parseDate(offerEnd);
+  let phase1End=firstDayOfNextMonth(start);
+  const phase2Start=addDays(phase1End,1);
+  let phase2End=firstDayOfNextMonth(phase2Start);
+  const phase3Start=addDays(phase2End,1);
+  let phase3End=end;
+  if(phase1End>end)phase1End=end;
+  if(phase2Start>end)return[{phase:1,startDate:formatDate(start),endDate:formatDate(phase1End),days:daysBetween(start,phase1End)}];
+  if(phase2End>end)phase2End=end;
+  if(phase3Start>end)return[
+    {phase:1,startDate:formatDate(start),endDate:formatDate(phase1End),days:daysBetween(start,phase1End)},
+    {phase:2,startDate:formatDate(phase2Start),endDate:formatDate(phase2End),days:daysBetween(phase2Start,phase2End)}
+  ];
+  if(phase3End>end)phase3End=end;
+  return[
+    {phase:1,startDate:formatDate(start),endDate:formatDate(phase1End),days:daysBetween(start,phase1End)},
+    {phase:2,startDate:formatDate(phase2Start),endDate:formatDate(phase2End),days:daysBetween(phase2Start,phase2End)},
+    {phase:3,startDate:formatDate(phase3Start),endDate:formatDate(phase3End),days:daysBetween(phase3Start,phase3End)}
+  ];
+}
+
+function calculateInterest(principal, depositStart, offer){
+  const phases=resolvePhases(depositStart,offer);
+  const rates=getRates(offer);
+  let totalInterest=0,cumulativeInterest=0,balance=principal;
+  const dailyRows=[], phaseResults=[];
+  phases.forEach((pi,idx)=>{
+    const rate=rates[idx]??rates[rates.length-1];
+    let phaseInterest=0, cur=parseDate(pi.startDate), pe=parseDate(pi.endDate);
+    while(cur<=pe){
+      const di=round3(balance*rate/100/365);
+      balance=round3(balance+di); cumulativeInterest=round3(cumulativeInterest+di);
+      phaseInterest=round3(phaseInterest+di); totalInterest=round3(totalInterest+di);
+      dailyRows.push({date:formatDate(cur),dailyInterest:di,cumulativeInterest,totalBalance:balance,phase:pi.phase});
+      cur=addDays(cur,1);
+    }
+    phaseResults.push({...pi,rate,interest:phaseInterest,dailyRows:dailyRows.filter(r=>r.phase===pi.phase)});
+  });
+  const totalDays=dailyRows.length;
+  const effectiveRate=totalDays>0?Math.round(totalInterest/principal/(totalDays/365)*100*100)/100:0;
+  return{totalInterest,totalBalance:balance,effectiveRate,totalDays,endDate:offer.endDate,phases:phaseResults,dailyRows};
+}
+
+function findOfferForDate(offers, depositStart){
+  const start=parseDate(depositStart);
+  const matched=offers.filter(o=>{
+    const openEnd=parseDate(o.promoUntil||o.endDate);
+    return start>=parseDate(o.startDate)&&start<=openEnd;
+  });
+  if(!matched.length)return undefined;
+  matched.sort((a,b)=>parseDate(b.startDate)-parseDate(a.startDate));
+  return matched[0];
+}
+
+function checkMemo(memo, principal, type='other'){
+  if(!memo?.minBalance)return false;
+  return principal>=(type==='priority'?memo.minBalance.priority:memo.minBalance.other);
+}
+
+function renderHistory(){
+  const offers=getOffers();
+  const el=document.getElementById('historyList');
+  el.innerHTML=offers.map(o=>`
+    <div class="hist-item">
+      <button class="hist-row ${selectedOfferId===o.id?'sel':''}" data-id="${o.id}">
+        <span>${o.label}</span>
+        <span class="rates">${o.rates.map(r=>`<span>${r}%</span>`).join('')}</span>
+        <span class="chev ${expandedHist===o.id?'open':''}">▼</span>
+      </button>
+      ${expandedHist===o.id?`<div class="hist-detail">
+        <p>${o.startDate} ~ ${o.endDate}${o.promoUntil?` · 開戶至 ${o.promoUntil}`:''}</p>
+        ${o.ratesUsd?.length?`<p>美元：${o.ratesUsd.map(r=>r+'%').join(' / ')}</p>`:''}
+        ${o.memo?`<div class="memo-box"><span class="memo-tag">MEMO</span><p>${o.memo.title}</p></div>`:''}
+      </div>`:''}
+    </div>`).join('');
+  el.querySelectorAll('.hist-row').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.dataset.id;
+      const o=offers.find(x=>x.id===id);
+      selectedOfferId=id;
+      expandedHist=expandedHist===id?null:id;
+      if(o?.startDate)document.getElementById('startDate').value=o.startDate;
+      updatePreview(); renderHistory();
+    };
+  });
+}
+
+function updatePreview(){
+  const o=getOffers().find(x=>x.id===selectedOfferId);
+  const el=document.getElementById('previewRates');
+  if(!o||!el)return;
+  el.textContent=`目前選擇：${o.label} — ${o.rates.map(r=>r+'%').join(' / ')}`;
+}
+
+function renderResults(){
+  const r=currentResult;
+  if(!r)return;
+  const phase=r.phases[activePhase];
+  const offer=getOffers().find(o=>o.id===selectedOfferId);
+  const principal=+document.getElementById('principal').value;
+  const type=document.getElementById('customerType').value;
+  const showMemo=offer?.memo&&checkMemo(offer.memo,principal,type);
+  const names=['一','二','三'];
+
+  document.getElementById('mainArea').innerHTML=`
+    ${showMemo?`<div class="memo-banner">
+      <span class="memo-tag">MEMO · 特別獎賞</span> <span style="color:var(--ok);font-size:12px">✓ 您的本金符合獎賞門檻</span>
+      <div class="memo-body">
+        ${offer.memo.image?`<img src="${offer.memo.image}" alt="" onerror="this.style.display='none'">`:''}
+        <div><h4>${offer.memo.title}</h4><p>${offer.memo.content}</p>
+        ${offer.memo.holdUntil?`<p style="color:var(--warn);margin-top:8px">需維持存款至 ${offer.memo.holdUntil} 或之前</p>`:''}
+        <p style="font-size:12px;margin-top:6px">目前本金：HK$${principal.toLocaleString()}</p></div>
+      </div></div>`:''}
+    <div class="card summary">
+      <div class="summary-head">
+        <div style="display:flex;flex-wrap:wrap;gap:24px 40px">
+          <div class="sum-item"><label>總利息</label><span>${fmtInterest(r.totalInterest)}</span></div>
+          <div class="sum-item"><label>總本息</label><span>${fmtBalance(r.totalBalance)}</span></div>
+          <div class="sum-item"><label>實際年利率</label><span>${fmtRate(r.effectiveRate)}%</span></div>
+          <div class="sum-item"><label>總日數</label><span>${r.totalDays}</span></div>
+          <div class="sum-item"><label>完結日期</label><span>${r.endDate}</span></div>
+        </div>
+        <button type="button" class="summary-save" id="btnSaveResult">儲存紀錄</button>
+      </div>
+    </div>
+    <div class="tabs">${r.phases.map((p,i)=>`<button class="tab ${activePhase===i?'active':''}" data-phase="${i}">第${names[i]}階段</button>`).join('')}</div>
+    <div class="card phase-info">
+      <span>年利率: <strong>${phase.rate}%</strong></span>
+      <span>階段日期: ${phase.startDate} ~ ${phase.endDate} (${phase.days}日)</span>
+      <span>該階段利息: <strong>${fmtInterest(phase.interest)}</strong></span>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>存入日期</th><th>日利息</th><th>累積利息</th><th>本息總和</th></tr></thead>
+        <tbody>${phase.dailyRows.map(row=>`<tr>
+          <td>${row.date}</td><td class="pos">+${fmtInterest(row.dailyInterest)}</td>
+          <td class="pos">+${fmtInterest(row.cumulativeInterest)}</td><td>${fmtBalance(row.totalBalance)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick=()=>{activePhase=+t.dataset.phase;renderResults()};
+  });
+  document.getElementById('btnSaveResult')?.addEventListener('click', saveCurrentRecord);
+}
+
+function saveCurrentRecord(){
+  if(!currentResult)return;
+  const offer=getOffers().find(o=>o.id===selectedOfferId);
+  const recs=getRecords();
+  recs.unshift({id:crypto.randomUUID(),savedAt:new Date().toISOString(),principal:+document.getElementById('principal').value,depositStart:document.getElementById('startDate').value,offerId:offer.id,offerLabel:offer.label,rates:offer.rates,currency:'HKD',customerType:document.getElementById('customerType').value,note:document.getElementById('note').value,rewardNote:document.getElementById('rewardNote').value,result:currentResult});
+  saveRecords(recs);
+  alert('紀錄已儲存！');
+}
+
+function getRecordYear(rec){
+  if(rec.depositStart)return rec.depositStart.slice(0,4);
+  const m=String(rec.offerLabel||rec.offerId||'').match(/^(\d{4})/);
+  return m?m[1]:'其他';
+}
+function getAvgDaily(rec){
+  const d=rec.result?.totalDays,i=rec.result?.totalInterest;
+  return d&&i!=null?Math.round(i/d*1000)/1000:null;
+}
+function summarizeYear(recs){
+  let ti=0,td=0;
+  recs.forEach(r=>{
+    ti+=r.result?.totalInterest||0;
+    td+=r.result?.totalDays||0;
+  });
+  return {ti,td,n:recs.length};
+}
+function formatYearSum(s){
+  const avg=s.td>0?Math.round(s.ti/s.td*1000)/1000:null;
+  return `${fmtInterest(s.ti)} · 平均日息 ${avg!=null?fmtInterest(avg):'—'}`;
+}
+function groupByYear(recs){
+  const sorted=[...recs].sort((a,b)=>(b.depositStart||'').localeCompare(a.depositStart||''));
+  const groups=[];let y=null,b=[];
+  sorted.forEach(r=>{const yr=getRecordYear(r);if(yr!==y){if(b.length)groups.push({year:y,records:b});y=yr;b=[r]}else b.push(r)});
+  if(b.length)groups.push({year:y,records:b});
+  return groups;
+}
+
+function updateRecordNotes(id,note,rewardNote){
+  saveRecords(getRecords().map(r=>r.id===id?{...r,note,rewardNote}:r));
+}
+
+const PHASE_NAMES=['一','二','三'];
+function getResultPhases(result,rates=[]){
+  if(result?.phases?.length)return result.phases;
+  if(!result?.dailyRows?.length)return [];
+  const hasPhase=result.dailyRows.some(r=>r.phase!=null);
+  if(!hasPhase){
+    const rows=result.dailyRows;
+    return [{phase:1,startDate:rows[0].date,endDate:rows[rows.length-1].date,days:rows.length,rate:rates[0]??null,interest:rows.reduce((s,r)=>round3(s+r.dailyInterest),0),dailyRows:rows}];
+  }
+  return [1,2,3].map(n=>{
+    const dailyRows=result.dailyRows.filter(r=>r.phase===n);
+    if(!dailyRows.length)return null;
+    return {phase:n,startDate:dailyRows[0].date,endDate:dailyRows[dailyRows.length-1].date,days:dailyRows.length,rate:rates[n-1]??null,interest:dailyRows.reduce((s,r)=>round3(s+r.dailyInterest),0),dailyRows};
+  }).filter(Boolean);
+}
+
+function buildDailyDetailHtml(rec){
+  const phases=getResultPhases(rec.result,rec.rates||[]);
+  if(!phases.length)return '';
+  const active=expandedPhaseByRec[rec.id]??0;
+  const phase=phases[active]||phases[0];
+  const tabs=phases.map((p,i)=>`<button type="button" class="rec-phase-tab ${active===i?'active':''}" data-phase-tab="${rec.id}" data-phase-idx="${i}">第${PHASE_NAMES[i]}階段</button>`).join('');
+  const rateInfo=phase.rate!=null?`<span>年利率: <strong>${phase.rate}%</strong></span>`:'';
+  const info=`<div class="rec-phase-info">${rateInfo}<span>階段日期: ${phase.startDate} ~ ${phase.endDate} (${phase.days}日)</span><span>該階段利息: <strong>${fmtInterest(phase.interest)}</strong></span></div>`;
+  const tbody=(phase.dailyRows||[]).map(row=>`<tr><td>${row.date}</td><td class="pos">+${fmtInterest(row.dailyInterest)}</td><td class="pos">+${fmtInterest(row.cumulativeInterest)}</td><td>${fmtBalance(row.totalBalance)}</td></tr>`).join('');
+  return `<div class="daily-section" onclick="event.stopPropagation()"><h4>每日利息明細</h4><div class="rec-phase-tabs">${tabs}</div>${info}<div class="daily-wrap"><table class="daily-mini"><thead><tr><th>日期</th><th>日利息</th><th>累積利息</th><th>本息總和</th></tr></thead><tbody>${tbody}</tbody></table></div></div>`;
+}
+
+function renderRecords(){
+  const recs=getRecords().sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  const el=document.getElementById('recordsList');
+  if(!recs.length){el.innerHTML='<div class="empty" style="min-height:200px"><p>尚無存款紀錄</p></div>';return}
+  const groups=groupByYear(recs);
+  const COLSPAN=11;
+  let rows='';
+  groups.forEach(g=>{
+    rows+=`<tr class="year-row"><td colspan="${COLSPAN}"><span class="year-label">${g.year} 年</span><span class="year-meta">${g.records.length} 筆 · ${formatYearSum(summarizeYear(g.records))}</span></td></tr>`;
+    g.records.forEach(rec=>{
+      const open=expandedRec===rec.id;
+      const rates=rec.rates||[];
+      const r=[0,1,2].map(i=>rates[i]!=null?rates[i]+'%':'—');
+      const sym='HK$';
+      const avg=getAvgDaily(rec);
+      const offer=getOffers().find(o=>o.id===rec.offerId);
+      rows+=`<tr class="rec-row ${open?'exp':''}" data-id="${rec.id}">
+        <td class="col-expand"><span class="chev ${open?'open':''}">▼</span></td>
+        <td class="col-date"><span class="rec-label">${rec.offerLabel||rec.offerId}</span><span class="rec-sub">${rec.depositStart||''}</span></td>
+        <td>${sym}${rec.principal?.toLocaleString()||''}</td>
+        <td class="col-rate">${r[0]}</td><td class="col-rate">${r[1]}</td><td class="col-rate">${r[2]}</td>
+        <td class="col-interest" style="color:var(--ok)">${fmtInterest(rec.result?.totalInterest)}</td>
+        <td class="col-daily">${avg!=null?fmtInterest(avg):'—'}</td>
+        <td class="col-note" title="${escAttr(rec.note)}">${truncText(rec.note)}</td>
+        <td class="col-reward" title="${escAttr(rec.rewardNote)}">${truncText(rec.rewardNote)}</td>
+        <td class="col-del"><button type="button" class="btn-del" data-del="${rec.id}">刪</button></td>
+      </tr>`;
+      if(open){
+        const dailyHtml=buildDailyDetailHtml(rec);
+        const rewardPh=offer?.memo?.title?`可記錄：${offer.memo.title}`:'如：HK$688 現金回贈、Pixar 足金';
+        rows+=`<tr><td colspan="${COLSPAN}" class="rec-detail-cell"><div class="rec-detail-inner">
+          <div class="rec-notes" onclick="event.stopPropagation()">
+            <div class="nf"><label>備註</label><input type="text" data-note="${rec.id}" value="${escAttr(rec.note)}" placeholder="可選填，如：聯名戶、轉帳來源"></div>
+            <div class="nf"><label>贈品 / 回贈</label><input type="text" data-reward="${rec.id}" value="${escAttr(rec.rewardNote)}" placeholder="${escAttr(rewardPh)}"></div>
+            <button type="button" class="btn-notes" data-save-notes="${rec.id}">儲存備註</button>
+          </div>
+          <div class="rec-grid">
+          <div><small>年利率</small>${fmtRate(rec.result?.effectiveRate)}%</div>
+          <div><small>總本息</small><span>${fmtBalance(rec.result?.totalBalance)}</span></div>
+          <div><small>完結日期</small>${rec.result?.endDate||''}</div>
+          <div><small>總日數</small>${rec.result?.totalDays||''} 日</div>
+          <div><small>儲存時間</small>${new Date(rec.savedAt).toLocaleString('zh-HK')}</div>
+        </div>${dailyHtml}</div></td></tr>`;
+      }
+    });
+  });
+  el.innerHTML=`<div class="rec-table-wrap"><table class="rec-table"><thead><tr>
+    <th class="col-expand"></th><th>DATE</th><th>$</th><th class="col-rate">1</th><th class="col-rate">2</th><th class="col-rate">3</th><th class="col-interest">總利息</th><th class="col-daily">日息</th><th class="col-note">備註</th><th class="col-reward">贈品/回贈</th><th class="col-del">DEL</th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+
+  el.querySelectorAll('.rec-row').forEach(row=>row.onclick=e=>{
+    if(e.target.closest('.btn-del')||e.target.closest('.rec-notes')||e.target.closest('.daily-section'))return;
+    const id=row.dataset.id;
+    expandedRec=expandedRec===id?null:id;
+    if(expandedRec!=null&&expandedPhaseByRec[expandedRec]==null)expandedPhaseByRec[expandedRec]=0;
+    renderRecords();
+  });
+  el.querySelectorAll('.btn-del').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    if(confirm('確定刪除？')){saveRecords(getRecords().filter(r=>r.id!==b.dataset.del));renderRecords()}
+  });
+  el.querySelectorAll('[data-save-notes]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const id=btn.dataset.saveNotes;
+    const note=el.querySelector(`[data-note="${id}"]`)?.value||'';
+    const rewardNote=el.querySelector(`[data-reward="${id}"]`)?.value||'';
+    updateRecordNotes(id,note,rewardNote);
+    renderRecords();
+  });
+  el.querySelectorAll('[data-phase-tab]').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    expandedPhaseByRec[btn.dataset.phaseTab]=+btn.dataset.phaseIdx;
+    renderRecords();
+  });
+}
+
+document.getElementById('btnCalc').onclick=()=>{
+  const offer=getOffers().find(o=>o.id===selectedOfferId);
+  if(!offer){alert('請選擇優惠期');return}
+  currentResult=calculateInterest(+document.getElementById('principal').value,document.getElementById('startDate').value,offer);
+  activePhase=0;
+  const saveBtn=document.getElementById('btnSave');
+  saveBtn.disabled=false;
+  saveBtn.title='儲存此次計算結果';
+  renderResults();
+};
+
+document.getElementById('btnReset').onclick=()=>{
+  document.getElementById('principal').value=50000;
+  document.getElementById('note').value='';
+  document.getElementById('rewardNote').value='';
+  currentResult=null;
+  const saveBtn=document.getElementById('btnSave');
+  saveBtn.disabled=true;
+  saveBtn.title='請先按計算';
+  document.getElementById('mainArea').innerHTML=`<div class="empty" id="emptyState"><p>輸入本金與日期，選擇優惠期後按「計算」</p><p id="previewRates" style="margin-top:12px;font-size:14px;color:var(--text2)"></p></div>`;
+  applyDefaultDate();
+};
+
+document.getElementById('btnSave').onclick=saveCurrentRecord;
+
+document.getElementById('startDate').onchange=()=>{
+  const m=findOfferForDate(getOffers(),document.getElementById('startDate').value);
+  if(m){selectedOfferId=m.id;renderHistory();updatePreview()}
+};
+
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const calc=b.dataset.page==='calc';
+  document.getElementById('pageCalc').classList.toggle('hidden',!calc);
+  document.getElementById('pageRecords').classList.toggle('hidden',calc);
+  if(!calc)renderRecords();
+});
+
+document.getElementById('themeBtn').onclick=()=>{
+  const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',t==='light'?'light':'');
+  document.getElementById('themeBtn').textContent=t==='light'?'☀️':'🌙';
+  localStorage.setItem(LS_THEME,t);
+};
+
+document.getElementById('btnExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify(getRecords(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`存款紀錄-${new Date().toISOString().slice(0,10)}.json`;a.click();
+};
+
+document.getElementById('importInput').onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  const imported=JSON.parse(await file.text());
+  const merged=[...imported,...getRecords()];
+  const seen=new Set(); const unique=merged.filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);return true});
+  saveRecords(unique);renderRecords();alert('匯入完成');
+  e.target.value='';
+};
+
+const savedTheme=localStorage.getItem(LS_THEME)||'dark';
+if(savedTheme==='light'){document.documentElement.setAttribute('data-theme','light');document.getElementById('themeBtn').textContent='☀️'}
+applyDefaultDate();
+  </script>
+</body>
+</html>
